@@ -1,0 +1,27 @@
+# -----------------------------
+# NXP / MCUXpresso Build Outputs
+# -----------------------------
+Debug/
+Release/
+build/
+output/
+
+*.o
+*.d
+*.su
+*.axf
+*.bin
+*.hex
+*.map
+*.srec
+*.elf
+
+# -----------------------------
+# IDE & System Files
+# -----------------------------
+.settings/
+.metadata/
+*.launch
+.DS_Store
+Thumbs.db
+*~
