@@ -1211,13 +1211,13 @@ void logic_task(void) {
     // road_center index: 7, 8
     char target_steering = 'c';
 
-    if (road_center > 2 && road_center <= 6) { // find best range - hh
-        target_steering = LENKUNG_IDX_0_6;
+    if (right_wall_idx > 2 && right_wall_idx <= 6) { // find best range - hh
+        target_steering = LENKUNG_IDX_0_6; // right
         current_gear = GEAR_FOR_LENKUNG;
         change_color = true;
     }
-    else if (road_center < 13 && road_center >= 9) { // find best range - hh
-        target_steering = LENKUNG_IDX_9_15;
+    else if (left_wall_idx < 13 && left_wall_idx >= 9) { // find best range - hh
+        target_steering = LENKUNG_IDX_9_15; // left
         current_gear = GEAR_FOR_LENKUNG;
         change_color = true;
     }
@@ -1292,7 +1292,7 @@ int main(void)
 
         // step 2:
         logic_task();
-        steering_task_manager();
+        // steering_task_manager();
 
         // set new delay for steering and black threshold for camera
         if (!adc_lock){
