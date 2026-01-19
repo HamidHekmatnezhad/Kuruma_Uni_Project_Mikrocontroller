@@ -31,26 +31,26 @@
 #define LOOP_DELAY_MS 5
 
 // LENKUNG
-#define LEFT  120.0f
-#define RIGHT 30.0f
-#define CENTER_L 50.0f
-#define CENTER_R 100.0f
-#define CENTER 70.0f
+#define LEFT  100.0f
+#define RIGHT 50.0f
+#define CENTER_L 60.0f //50.0f
+#define CENTER_R 90.0f//100.0f
+#define CENTER 75.0f
 #define KICK_DURATION_MS 150 // ms
 #define DELAY_LENKUNG_TICKS 5000 // 50ms
 #define LENKUNG_IDX_0_6 'r'
 #define LENKUNG_IDX_9_15 'l'
-#define STEERING_DELAY_STEPS  30  // find best setting
+#define STEERING_DELAY_STEPS  10  // find best setting
 #define MAX_BUFFER_SIZE 100
 
 // BLDC
 #define ADC_BUFSIZE 1024
-#define TIME_FOR_STARTUP_BIG_BLDC 100
-#define TIME_FOR_STARTUP_SMALL_BLDC 20
+#define TIME_FOR_STARTUP_BIG_BLDC 100 // 100
+#define TIME_FOR_STARTUP_SMALL_BLDC 20 // 20
 #define DELAY_FOR_START_MOTOR 2000
 
-#define START_DUTY_CYCLE_BLDC 28
-#define RUN_DUTY_CYCLE_BLDC 22 // power
+#define START_DUTY_CYCLE_BLDC 50 // 28
+#define RUN_DUTY_CYCLE_BLDC 30 //22 // power
 #define SPEED_FOR_GEAR_1 5000 // speed
 #define SPEED_FOR_GEAR_2 4000
 #define SPEED_FOR_GEAR_3 3000
@@ -59,9 +59,9 @@
 #define GEAR_FOR_STRAIGHT 2
 // BLDC TUNING PARAMETERS
 #define BLDC_START_DELAY_TICKS   100000 // 1 sec delay
-#define BLDC_INITIAL_PERIOD      20000  // Start slow/strong
-#define BLDC_RAMP_THRESHOLD_LOW  10000  // Speed up phase 1 limit
-#define BLDC_RAMP_THRESHOLD_HIGH 3000   // Speed up phase 2 limit
+#define BLDC_INITIAL_PERIOD      35000 //20000  // Start slow/strong
+#define BLDC_RAMP_THRESHOLD_LOW  10000 // 10000  // Speed up phase 1 limit
+#define BLDC_RAMP_THRESHOLD_HIGH 2000 // 2000   // Speed up phase 2 limit // 3000
 #define BLDC_RAMP_END_TARGET     2000   // Target to switch to RUNNING
 #define BLDC_RUNNING_ACCEL_STEP  2      // How fast speed changes in RUNNING
 #define BLDC_STOP_WAIT_TICKS     400000 // 4 sec safety wait
@@ -77,7 +77,7 @@
 #define BIN_COUNT_CAMERA  16
 #define BLOCK_SIZE_CAMERA 8
 #define GRAY_THRESHOLD_ADD  300
-#define BLACK_THRESHOLD 600
+#define BLACK_THRESHOLD 900
 
 #define IDEAL_CENTER_DIFF           5
 #define CAMERA_RIGHT_SIDE_START_IDX 7
@@ -163,7 +163,7 @@ volatile bool initial_start = false;
 // ADC buffer
 volatile int16_t  AT_NONCACHEABLE_SECTION_INIT(adc_value_buffer[ADC_BUFSIZE]);
 volatile uint32_t AT_NONCACHEABLE_SECTION_INIT(adc_tick_buffer[ADC_BUFSIZE]);
-volatile uint16_t adc_bufpos = 0;
+// volatile uint16_t adc_bufpos = 0;
 volatile bool adc_write_buf = true;
 
 // Camera
@@ -185,8 +185,8 @@ volatile bool g_Transfer_Done = false;
 volatile bool isTransferCompleted  = false;
 AT_NONCACHEABLE_SECTION(uint8_t led_red_blue[BUFF_LENGTH]);
 AT_NONCACHEABLE_SECTION(uint8_t led_blue_red[BUFF_LENGTH]);
-AT_NONCACHEABLE_SECTION(uint8_t led_cyan_yellow[BUFF_LENGTH]);
-AT_NONCACHEABLE_SECTION(uint8_t led_yellow_cyan[BUFF_LENGTH]);
+AT_NONCACHEABLE_SECTION(uint8_t led_off_1[BUFF_LENGTH]);
+AT_NONCACHEABLE_SECTION(uint8_t led_off_2[BUFF_LENGTH]);
 volatile uint32_t last_led_update = 0;
 volatile bool toggle_led = false;
 const uint8_t BIT_0[3] = {0x92, 0x49, 0x24}; // off - 0
@@ -383,11 +383,11 @@ void motor_bemf_irq_handler(void) {
         uint32_t status = ADC16_GetChannelStatusFlags(ADC0_PERIPHERAL, i);
         if (status == kADC16_ChannelConversionDoneFlag) {
             result_values[i] = ADC16_GetChannelConversionValue(ADC0_PERIPHERAL, i);
-            if(adc_write_buf){
-                adc_value_buffer[adc_bufpos] = result_values[0];
-                adc_tick_buffer[adc_bufpos]= ticks;
-                adc_bufpos = (adc_bufpos + 1) % ADC_BUFSIZE;
-            }
+            // if(adc_write_buf){
+            //     adc_value_buffer[adc_bufpos] = result_values[0];
+            //     adc_tick_buffer[adc_bufpos]= ticks;
+            //     adc_bufpos = (adc_bufpos + 1) % ADC_BUFSIZE;
+            // }
         }
     }
     ADC16_SetChannelConfig(ADC0_PERIPHERAL, ADC0_CH0_CONTROL_GROUP,
@@ -603,8 +603,8 @@ void led_siren_task(void) {
             else send_led_data(led_blue_red);
         }
         else {
-            if (toggle_led) send_led_data(led_cyan_yellow);
-            else send_led_data(led_yellow_cyan);
+            if (toggle_led) send_led_data(led_off_1);
+            else send_led_data(led_off_2);
         }
     }
 }
@@ -766,16 +766,23 @@ void refresh_lcd(void) {
         char cam_str[21] = "   :                ";
         if (state_lenkung == -1) {
             // cam_str[1] = 'L';     // <--
-            cam_str[0] = '<'; cam_str[1] = '-'; cam_str[2] = '-';
+            // cam_str[0] = '<'; cam_str[2] = '-';
+            cam_str[1] = '<';
             }
         else if (state_lenkung == 0) {
             // cam_str[1] = 'C'; // ^^^
-            cam_str[0] = '^'; cam_str[1] = '^'; cam_str[2] = '^';
+            // cam_str[0] = '^'; cam_str[2] = '^';
+            cam_str[1] = '^';
         }
         else if (state_lenkung == 1) {
             // cam_str[1] = 'R'; // -->
-            cam_str[0] = '-'; cam_str[1] = '-'; cam_str[2] = '>';
+            // cam_str[0] = '-'; cam_str[2] = '>';
+            cam_str[1] = '>';
         }
+        if (left_wall_idx == -1) cam_str[0] = '-';
+        else cam_str[0] = left_wall_idx + '0';
+        if (right_wall_idx == -1) cam_str[2] = '-';
+        else cam_str[2] = right_wall_idx + '0';
 
         int j = 0;
         for (int i=BIN_COUNT_CAMERA; i>0; i--) {
@@ -936,10 +943,10 @@ void bldc_update_isr(void) {
                 commute(START_DUTY_CYCLE_BLDC);
                 last_commutation_tick_bldc = current_tick;
 
-                // Log
-                adc_value_buffer[adc_bufpos] = 6000;
-                adc_tick_buffer[adc_bufpos] = ticks;
-                adc_bufpos = (adc_bufpos + 1) % ADC_BUFSIZE;
+                // Log - nicht nutzlich
+                // adc_value_buffer[adc_bufpos] = 6000;
+                // adc_tick_buffer[adc_bufpos] = ticks;
+                // adc_bufpos = (adc_bufpos + 1) % ADC_BUFSIZE;
 
                 if (commutation_period_bldc > BLDC_RAMP_THRESHOLD_HIGH) {
                     if (commutation_period_bldc > BLDC_RAMP_THRESHOLD_LOW) commutation_period_bldc -= TIME_FOR_STARTUP_BIG_BLDC;
@@ -968,9 +975,9 @@ void bldc_update_isr(void) {
                 commute(RUN_DUTY_CYCLE_BLDC);
                 last_commutation_tick_bldc = current_tick;
 
-                adc_value_buffer[adc_bufpos] = 6000;
-                adc_tick_buffer[adc_bufpos] = ticks;
-                adc_bufpos = (adc_bufpos + 1) % ADC_BUFSIZE;
+                // adc_value_buffer[adc_bufpos] = 6000;
+                // adc_tick_buffer[adc_bufpos] = ticks;
+                // adc_bufpos = (adc_bufpos + 1) % ADC_BUFSIZE;
             }
             break;
 
@@ -1026,7 +1033,7 @@ void lenkung(char lkg) {
 
     if (lkg == 'l') { // Left
         if (steer_state == STEER_IDLE){
-            if (dutycycle_lenkung == CENTER_R || dutycycle_lenkung == CENTER) { // need kick-start
+            if ((false) && (dutycycle_lenkung == CENTER_R || dutycycle_lenkung == CENTER)) { // need kick-start
                 apply_steering_pwm(CENTER_L);
                 pending_final_pwm = LEFT;
                 steer_timer_start = ticks;
@@ -1039,7 +1046,7 @@ void lenkung(char lkg) {
     }
     else if (lkg == 'r') { // Right
         if (steer_state == STEER_IDLE) {
-            if (dutycycle_lenkung == CENTER_L || dutycycle_lenkung == CENTER) { // need kick-start
+            if ((dutycycle_lenkung == CENTER_L || dutycycle_lenkung == CENTER) && (false)) { // need kick-start
                 apply_steering_pwm(CENTER_R);
                 pending_final_pwm = RIGHT;
                 steer_timer_start = ticks;
@@ -1052,8 +1059,9 @@ void lenkung(char lkg) {
     }
     else if (lkg == 'c') { // Center
         steer_state = STEER_IDLE;
-        if (dutycycle_lenkung == LEFT) apply_steering_pwm(CENTER_L);
-        else if (dutycycle_lenkung == RIGHT) apply_steering_pwm(CENTER_R);
+        apply_steering_pwm(CENTER);
+        // if (dutycycle_lenkung == LEFT) apply_steering_pwm(CENTER_L);
+        // else if (dutycycle_lenkung == RIGHT) apply_steering_pwm(CENTER_R);
         // else apply_steering_pwm(CENTER);
         state_lenkung = 0;
     }
@@ -1127,9 +1135,9 @@ void find_line(void) {
         }
         sum /= BLOCK_SIZE_CAMERA;
 
-        if (sum < black_threshold_current)
+        if (sum <= black_threshold_current)
             vision_output[idx] = BLACK;
-        else if (sum < gray_threshold)
+        else if (sum <= gray_threshold)
             vision_output[idx] = GRAY;
         else
             vision_output[idx] = WHITE;
@@ -1174,12 +1182,16 @@ void logic_task(void) {
         }
     }
 
+    road_center = 7; // center
+
+    if (0){
     road_center = -1;
+    last_valid_center = 7;
 
     // calculate center
     if (left_wall_idx != -1 && right_wall_idx != -1) {
         road_center = (left_wall_idx + right_wall_idx) / 2;
-        last_valid_center = road_center;
+        // last_valid_center = road_center; // no see
     }
     else if (left_wall_idx != -1) {
         // Only left blackline detected -> estimated center
@@ -1193,24 +1205,26 @@ void logic_task(void) {
         // No blacklines detected -> use memory (last valid)
         road_center = last_valid_center;
     }
+    }
 
     // steering
     // road_center index: 7, 8
     char target_steering = 'c';
 
-    if (road_center < 6) {
+    if (road_center > 2 && road_center <= 6) { // find best range - hh
         target_steering = LENKUNG_IDX_0_6;
         current_gear = GEAR_FOR_LENKUNG;
-        change_color = !change_color;
+        change_color = true;
     }
-    else if (road_center > 9) {
+    else if (road_center < 13 && road_center >= 9) { // find best range - hh
         target_steering = LENKUNG_IDX_9_15;
         current_gear = GEAR_FOR_LENKUNG;
-        change_color = !change_color;
+        change_color = true;
     }
     else {
         target_steering = 'c';
         current_gear = GEAR_FOR_STRAIGHT;
+        change_color = false;
     }
     delayed_lenkung(target_steering);
 
@@ -1223,7 +1237,7 @@ void logic_task(void) {
 
 int main(void)
 {
-     BOARD_InitBootPins();
+    BOARD_InitBootPins();
     BOARD_InitBootClocks();
     BOARD_InitBootPeripherals();
 #ifndef BOARD_INIT_DEBUG_CONSOLE_PERIPHERAL
@@ -1247,25 +1261,31 @@ int main(void)
     // setup LED
     memset(led_red_blue, 0, BUFF_LENGTH);
     memset(led_blue_red, 0, BUFF_LENGTH);
-    memset(led_cyan_yellow, 0, BUFF_LENGTH);
-    memset(led_yellow_cyan, 0, BUFF_LENGTH);
+    memset(led_off_1, 0, BUFF_LENGTH);
+    memset(led_off_2, 0, BUFF_LENGTH);
 
     set_led_range(led_red_blue, 0, 31, 1, 0, 0); //red
     set_led_range(led_red_blue, 32, 63, 0, 0, 1); // blue
     set_led_range(led_blue_red, 0, 31, 0, 0, 1);  // blue
     set_led_range(led_blue_red, 32, 63, 1, 0, 0); // red
 
-    set_led_range(led_cyan_yellow, 0,31, 0, 1, 1); // cyan
-    set_led_range(led_cyan_yellow, 32, 63, 1, 1, 0); // yellow
-    set_led_range(led_yellow_cyan, 0, 31, 1, 1, 0); // yellow
-    set_led_range(led_yellow_cyan, 32, 63, 0, 1, 1); // cyan
+    // set_led_range(led_cyan_yellow, 0,31, 0, 1, 1); // cyan
+    // set_led_range(led_cyan_yellow, 32, 63, 1, 1, 0); // yellow
+    // set_led_range(led_yellow_cyan, 0, 31, 1, 1, 0); // yellow
+    // set_led_range(led_yellow_cyan, 32, 63, 0, 1, 1); // cyan
+
+    set_led_range(led_off_1, 0,31, 0, 0, 0);   // off
+    set_led_range(led_off_1, 32, 63, 0, 0, 0); // off
+    set_led_range(led_off_2, 0, 31, 0, 0, 0);  // off
+    set_led_range(led_off_2, 32, 63, 0, 0, 0); // off
 
     // clean up camera pixel
     for(int i=0; i<CAMERA_PIXEL_COUNT; i++){
         camera_adc_output[i]=0;
     }
 
-    while(1)
+    bool START_MAIN = true;
+    while(START_MAIN)
     {
         // step 1:
         find_line();
@@ -1295,6 +1315,50 @@ int main(void)
         led_siren_task();
 
         sleep_ms(LOOP_DELAY_MS);
+    }
+
+    int test_number = 3;
+    while(!START_MAIN){
+
+        if (test_number == 1) {
+            apply_steering_pwm(30);
+            sleep_ms(2000);
+
+            apply_steering_pwm(80);
+            sleep_ms(2000);
+
+            apply_steering_pwm(120);
+            sleep_ms(2000);
+
+            apply_steering_pwm(80);
+            sleep_ms(2000);
+
+            apply_steering_pwm(30);
+            sleep_ms(2000);
+        }
+
+        else if (test_number == 2){
+            current_gear = SPEED_FOR_GEAR_1;
+            sleep_ms(3000);
+
+            current_gear = SPEED_FOR_GEAR_2;
+            sleep_ms(3000);
+
+            current_gear = SPEED_FOR_GEAR_3;
+            sleep_ms(3000);
+
+            current_gear = SPEED_FOR_GEAR_4;
+            sleep_ms(3000);
+        }
+
+        else if (test_number == 3){
+            apply_steering_pwm(50);
+            sleep_ms(3000);
+            apply_steering_pwm(100);
+            sleep_ms(3000);
+            apply_steering_pwm(75);
+            sleep_ms(3000);
+        }
     }
 
     return 0;
