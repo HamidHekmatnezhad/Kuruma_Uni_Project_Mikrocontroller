@@ -52,8 +52,8 @@
 #define SPEED_FOR_GEAR_2 4000
 #define SPEED_FOR_GEAR_3 3000
 #define SPEED_FOR_GEAR_4 2000
-#define GEAR_FOR_LENKUNG 1
-#define GEAR_FOR_STRAIGHT 1
+#define GEAR_FOR_LENKUNG  1
+#define GEAR_FOR_STRAIGHT 2
 // BLDC TUNING PARAMETERS
 #define BLDC_START_DELAY_TICKS   100000 // 1 sec delay
 #define BLDC_INITIAL_PERIOD      35000  // Start slow/strong
@@ -77,7 +77,6 @@
 #define BLACK_THRESHOLD 1000 
 #define MIN_BLOCKS_FOR_DETECTION 5
 
-#define IDEAL_CENTER_DIFF           5
 #define CAMERA_RIGHT_SIDE_START_IDX 16
 #define CAMERA_RIGHT_SIDE_END_IDX   0  
 #define CAMERA_LEFT_SIDE_START_IDX  16 
@@ -111,24 +110,16 @@ typedef enum { //brushless mc
 
 // ----------------------- variables -----------------------
 volatile uint32_t ticks=0;
-volatile uint32_t logic_timer = 0;
 volatile uint32_t millis = 0;
 volatile uint32_t last_lcd_update = 0;
-volatile int last_valid_center = 7;
 
 // lenkung
 volatile float dutycycle_lenkung = 50.0f;
 volatile int state_lenkung = 0;
-uint32_t steer_timer_start = 0;
-float pending_final_pwm = 0;
-volatile int left_wall_idx = -1;
-volatile int right_wall_idx = -1;
-volatile int road_center = -1;
 // buffer for steering with delay
 volatile char steer_buffer[MAX_BUFFER_SIZE];
 volatile int buffer_head = 0;
 volatile int buffer_tail = 0;
-volatile int current_buffer_items = 0;
 volatile int steering_delay_steps_current = STEERING_DELAY_STEPS;
 volatile int steering_delay_steps_new = STEERING_DELAY_STEPS;
 volatile bool adc_lock = true;
@@ -137,7 +128,6 @@ volatile bool first_time_delay_steering = true;
 volatile char last_command = 'x';
 
 // motor
-volatile uint32_t ticks_bldc = 0;
 volatile uint8_t current_phase_bldc = 0;
 volatile uint8_t current_duty_cycle_bldc = START_DUTY_CYCLE_BLDC;
 MotorState_t motor_state = MOTOR_STATE_STOP;
@@ -166,12 +156,9 @@ volatile int black_threshold_new = BLACK_THRESHOLD;
 volatile int gray_threshold = BLACK_THRESHOLD + GRAY_THRESHOLD_ADD;
 
 // Liquid LCD
-static int lcd_update_timer = 0;
 char st_str[16];
 
 // LED
-edma_handle_t g_EDMA_Handle;
-volatile bool g_Transfer_Done = false;
 volatile bool isTransferCompleted  = false;
 AT_NONCACHEABLE_SECTION(uint8_t led_red_blue[BUFF_LENGTH]);
 AT_NONCACHEABLE_SECTION(uint8_t led_blue_red[BUFF_LENGTH]);
@@ -947,7 +934,7 @@ void bldc_update_isr(void) {
 /**
  * @brief  Applies the calculated PWM to the steering servo.
  * Converts duty cycle (ms) to FTM register value.
- * @param  dc: Duty cycle in milliseconds * 10 (e.g., 70 for center).
+ * @param  dc: Duty cycle in milliseconds * 10 (e.g., 75 for center).
  */
 void apply_steering_pwm(float dc)
 {
@@ -1030,6 +1017,7 @@ void delayed_lenkung(char direction) {
  * @brief  Image Processing.
  * Analyzes the ADC array from the camera.
  * Classifies each bin as BLACK, GRAY, or WHITE based on thresholds.
+ * used falling/rasing edge logic for gray areas.
  */
 void find_line(void) {
     uint16_t min_val = 4096;
@@ -1066,8 +1054,8 @@ void find_line(void) {
 /**
  * @brief  Main Application Logic.
  * 1. Determines motor start timing.
- * 2. Finds left/right track walls from vision data.
- * 3. Calculates the road center.
+ * 2. Processes camera data to detect line position.
+ * 3. Implements decision logic for steering direction.
  * 4. Decides steering direction and gear/speed based on curvature.
  */
 void logic_task(void) {
