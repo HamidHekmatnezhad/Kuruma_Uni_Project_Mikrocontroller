@@ -292,7 +292,7 @@ void FTM3_IRQHANDLER(void) {
 /**
  * @brief  Port C Interrupt Handler.
  * Handles GPIO interrupts on Port C (e.g., button press).
- * Toggles the LED siren color mode.
+ * Toggles the LED on/off mode.
  */
 void GPIOC_IRQHANDLER(void) {
   /* Get pin flags */
@@ -962,13 +962,13 @@ void lenkung(char lkg) {
     }
 
     if (lkg == 'l') { // Left
-            apply_steering_pwm(LEFT);
-            state_lenkung = -1;
-        
+        apply_steering_pwm(LEFT);
+        state_lenkung = -1;
+    
     }
     else if (lkg == 'r') { // Right
-            apply_steering_pwm(RIGHT);
-            state_lenkung = 1;
+        apply_steering_pwm(RIGHT);
+        state_lenkung = 1;
     }
     else if (lkg == 'c') { // Center
         apply_steering_pwm(CENTER);
