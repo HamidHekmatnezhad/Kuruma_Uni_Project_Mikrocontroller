@@ -48,7 +48,7 @@
 
 #define START_DUTY_CYCLE_BLDC 30 // 28
 #define RUN_DUTY_CYCLE_BLDC 25 // 30 //22 // power
-#define SPEED_FOR_GEAR_1 5500 // 5000 // speed
+#define SPEED_FOR_GEAR_1 5000 // 5000 // speed
 #define SPEED_FOR_GEAR_2 4000
 #define SPEED_FOR_GEAR_3 3000
 #define SPEED_FOR_GEAR_4 2000
@@ -115,13 +115,13 @@ volatile uint32_t last_lcd_update = 0;
 
 // lenkung
 volatile float dutycycle_lenkung = 50.0f;
-volatile int state_lenkung = 0;
+volatile int state_lenkung = 0; // -1: left, 0: center, 1: right
 // buffer for steering with delay
 volatile char steer_buffer[MAX_BUFFER_SIZE];
 volatile int buffer_head = 0;
 volatile int buffer_tail = 0;
-volatile int steering_delay_steps_current = STEERING_DELAY_STEPS;
-volatile int steering_delay_steps_new = STEERING_DELAY_STEPS;
+volatile int steering_delay_steps_current = STEERING_DELAY_STEPS; // for setting with potentiometer
+volatile int steering_delay_steps_new = STEERING_DELAY_STEPS; // for setting with potentiometer
 volatile bool adc_lock = true;
 volatile bool prev_adc_lock = true;
 volatile bool first_time_delay_steering = true;
@@ -156,7 +156,7 @@ volatile int black_threshold_new = BLACK_THRESHOLD;
 volatile int gray_threshold = BLACK_THRESHOLD + GRAY_THRESHOLD_ADD;
 
 // Liquid LCD
-char st_str[16];
+
 
 // LED
 volatile bool isTransferCompleted  = false;
@@ -951,12 +951,10 @@ void apply_steering_pwm(float dc)
 /**
  * @brief  Core Steering Logic.
  * Decides the steering PWM based on command ('l', 'r', 'c').
- * Implements "Kick-Start" logic to overcome static friction
  * by momentarily over-steering.
  * @param  lkg: Steering command char ('l'=Left, 'r'=Right, 'c'=Center).
  */
 void lenkung(char lkg) {
-    // kick-start protection
     if (lkg != last_command) {
         last_command = lkg;
     }
