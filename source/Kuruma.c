@@ -556,8 +556,8 @@ void led_siren_task(void) {
     // Non-Blocking method
     if (millis - last_led_update > SIREN_SPEED) {
         last_led_update = millis;
-        toggle_led = !toggle_led;
 
+        toggle_led = !toggle_led;
         if (change_color){
             if (toggle_led) send_led_data(led_red_blue);
             else send_led_data(led_blue_red);
