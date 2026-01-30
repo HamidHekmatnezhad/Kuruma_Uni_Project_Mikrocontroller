@@ -97,8 +97,8 @@ The BLDC motor is controlled via a virtual gearbox system. Note that for the Com
 ### Speed Settings
 | Gear | Parameter | Value (Ticks) | Description |
 | :--- | :--- | :--- | :--- |
-| **1** | `SPEED_FOR_GEAR_1` | `5500` | **Slowest.** Used for sharp corners to maintain traction. |
-| **2** | `SPEED_FOR_GEAR_2` | `4000` | **Medium.** Used for mild curves or transitions. |
+| **1** | `SPEED_FOR_GEAR_1` | `4000` | **Slowest.** Used for sharp corners to maintain traction. |
+| **2** | `SPEED_FOR_GEAR_2` | `3500` | **Medium.** Used for mild curves or transitions. |
 | **3** | `SPEED_FOR_GEAR_3` | `3000` | **Fast.** Acceleration phase. |
 | **4** | `SPEED_FOR_GEAR_4` | `2000` | **Max Speed.** Used for long straights. |
 
